@@ -1,0 +1,8 @@
+{
+	"appId": "com.analyst.systemsync",
+	"appName": "SYSTEM",
+	"webDir": "www",
+	"android": {
+		"backgroundColor": "#050a14"
+	}
+}
