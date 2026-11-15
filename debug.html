@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#050a14">
+<title>SYSTEM · S.events Diagnostics</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#050a14;color:#d4e8ff}
+*{box-sizing:border-box}body{margin:0;padding:18px;max-width:760px;margin-inline:auto}
+h1{font-size:20px;color:#38e0ff;margin:0 0 6px}p{font-size:14px;color:#9cb6d6;line-height:1.6}
+.card{border:1px solid #2c8cff;background:#08142b;padding:14px;margin:14px 0}#status{font-size:13px;color:#ffca75}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#030b18;border:1px solid #2c8cff66;padding:12px;font:12px/1.55 ui-monospace,monospace;min-height:120px}
+button{background:#0a2347;color:#d4e8ff;border:1px solid #38e0ff;padding:10px 13px;margin:4px 6px 4px 0;font-size:14px;cursor:pointer}
+.small{font-size:12px;color:#7592b8}iframe{position:absolute;width:1px;height:1px;left:-20px;top:-20px;opacity:0;pointer-events:none;border:0}
+</style>
+</head>
+<body>
+<h1>SYSTEM · S.events Diagnostics</h1>
+<p>เครื่องมือตรวจสอบแบบอ่านอย่างเดียว ใช้หน้าเกมที่ฝังอยู่เพื่ออ่านค่า <code>S.events</code> ขณะทำงาน แล้วเปรียบเทียบกับเซฟใน LocalStorage</p>
+<div class="card">
+  <div id="status">กำลังเปิดหน้าเกมและรอให้ระบบเริ่มทำงาน...</div>
+  <pre id="report">รอข้อมูล...</pre>
+  <button id="refresh">ตรวจใหม่</button>
+  <button id="copy">คัดลอกรายงาน</button>
+  <button id="open">เปิดหน้าเกมปกติ</button>
+</div>
+<p class="small">รายงานนี้ไม่แสดง User ID, URL/Key ของ Supabase, Access Token, Refresh Token หรือรหัสผ่าน และหน้าเครื่องมือนี้ไม่มีคำสั่งเขียนข้อมูลลง Supabase ค่ะ</p>
+<script>
+(()=>{
+ const $=id=>document.getElementById(id);
+ const frame=document.createElement('iframe');frame.title='SYSTEM diagnostic game frame';frame.src='./?diag_frame=1';document.body.append(frame);
+ let ready=false,last=null;
+ const safeCloud=()=>{try{const c=JSON.parse(localStorage.getItem('sys2_sb')||'{}');return{configured:!!(c.url&&c.key&&c.refresh),revision:c.rev??null}}catch(e){return{configured:false,revision:null,readError:String(e)}}};
+ function inspect(){
+  if(!ready){$('status').textContent='หน้าเกมยังโหลดไม่เสร็จ กำลังรอ...';return}
+  try{
+   const game=frame.contentWindow.__SYSTEM_DEBUG_READONLY__();
+   last={...game,cloud:safeCloud(),note:'Read-only diagnostic. Cloud fields are local sync metadata only.'};
+   $('status').textContent='อ่าน S.events จากหน้าเกมสำเร็จ · Day '+game.day+' · Lv.'+game.level;
+   $('report').textContent=JSON.stringify(last,null,2);
+  }catch(e){$('status').textContent='อ่านตัวแปรหน้าเกมไม่สำเร็จ: '+String(e);$('report').textContent='ตรวจว่าได้อัปเดต index.html เวอร์ชัน Debug แล้ว และเปิดหน้านี้จากโดเมนเดียวกับหน้าเกม จากนั้นกด “ตรวจใหม่” อีกครั้ง'}
+ }
+ frame.addEventListener('load',()=>{ready=true;setTimeout(inspect,1000)});
+ $('refresh').onclick=inspect;
+ $('copy').onclick=async()=>{if(!last)inspect();if(!last)return;const t=JSON.stringify(last,null,2);try{await navigator.clipboard.writeText(t);$('status').textContent='คัดลอกรายงานแล้ว'}catch(e){const x=document.createElement('textarea');x.value=t;document.body.append(x);x.select();document.execCommand('copy');x.remove();$('status').textContent='คัดลอกรายงานแล้ว'}};
+ $('open').onclick=()=>location.href='./';
+})();
+</script>
+</body>
+</html>
